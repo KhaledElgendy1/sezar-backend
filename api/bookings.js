@@ -3,44 +3,44 @@ const Booking = require('../models/Booking');
 
 const mongoURI = process.env.MONGO_URI;
 
-if (mongoose.connection.readyState === 0) {
-    mongoose.connect(mongoURI, {
-        useNewUrlParser: true,
-        useUnifiedTopology: true,
-    }).then(() => console.log("MongoDB connected"))
-      .catch((error) => console.error("MongoDB connection error:", error));
-}
+mongoose.connect(mongoURI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+}).then(() => console.log("MongoDB connected"))
+  .catch((error) => console.error("MongoDB connection error:", error));
 
 module.exports = async (req, res) => {
-    if (req.method === 'POST') {
-        try {
+    try {
+        if (req.method === 'POST') {
+            const { client, clientId, phone, captain, captainId } = req.body;
+            if (!client || !clientId || !phone || !captain || !captainId) {
+                return res.status(400).json({ message: 'All fields are required.' });
+            }
+
             const newBooking = new Booking(req.body);
             await newBooking.save();
-            res.status(201).json({ message: 'Booking added successfully', booking: newBooking });
-        } catch (error) {
-            console.error("Error adding booking:", error);
-            res.status(500).json({ message: 'Failed to add booking', error });
-        }
-    } else if (req.method === 'GET') {
-        try {
-            const clientId = req.query.clientId;
+            return res.status(201).json({ message: 'Booking added successfully', booking: newBooking });
+        } 
+        
+        if (req.method === 'GET') {
+            const { clientId } = req.query;
+
             if (!clientId) {
                 return res.status(400).json({ message: 'clientId is required' });
             }
 
             const bookings = await Booking.find({ clientId });
-
             if (bookings.length === 0) {
                 return res.status(404).json({ message: 'No bookings found for this client' });
             }
 
-            res.status(200).json(bookings);
-        } catch (error) {
-            console.error("Error retrieving bookings:", error);
-            res.status(500).json({ message: 'Failed to retrieve bookings', error });
-        }
-    } else {
+            return res.status(200).json(bookings);
+        } 
+        
         res.setHeader('Allow', ['GET', 'POST']);
-        res.status(405).end(`Method ${req.method} Not Allowed`);
+        return res.status(405).end(`Method ${req.method} Not Allowed`);
+    } catch (error) {
+        console.error("Error processing request:", error);
+        return res.status(500).json({ message: 'An error occurred while processing the request', error });
     }
 };
