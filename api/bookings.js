@@ -23,15 +23,10 @@ module.exports = async (req, res) => {
         } 
         
         if (req.method === 'GET') {
-            const { clientId } = req.query;
-
-            if (!clientId) {
-                return res.status(400).json({ message: 'clientId is required' });
-            }
-
-            const bookings = await Booking.find({ clientId });
+            const bookings = await Booking.find({}).sort({ departureDate: 1 }); 
+            
             if (bookings.length === 0) {
-                return res.status(404).json({ message: 'No bookings found for this client' });
+                return res.status(404).json({ message: 'No bookings found' });
             }
 
             return res.status(200).json(bookings);
